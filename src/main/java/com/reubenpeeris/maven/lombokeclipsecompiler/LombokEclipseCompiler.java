@@ -101,13 +101,15 @@ public class LombokEclipseCompiler extends AbstractCompiler {
             Process process = pb.start();
 
             IOUtil.copy(process.getInputStream(), System.out);
+            int result = process.waitFor();
             System.out.println();
-            int result = process.exitValue();
             
             return new CompilerResult(result == 0, Collections.<CompilerMessage>emptyList());
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        	throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+        	throw new RuntimeException(e);
+		}
     }
 
  
