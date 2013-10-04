@@ -38,7 +38,7 @@ public class LombokEclipseCompiler extends AbstractCompiler {
         String lombokJarRegex = config.getCustomCompilerArgumentsAsMap().get(
                 LOMBOK_JAR_PROPERTY);
         if (lombokJarRegex == null) {
-            lombokJarRegex = ".*/lombok-[^/]*\\.jar";
+            lombokJarRegex = ".*[/\\\\]lombok-[^/\\\\]*\\.jar";
         }
         String lombokJar = getFromList(lombokJarRegex,
                 config.getClasspathEntries(), "Lombok jars");
