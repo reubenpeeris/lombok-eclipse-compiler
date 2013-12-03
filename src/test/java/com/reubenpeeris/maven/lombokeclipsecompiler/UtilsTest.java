@@ -2,50 +2,66 @@ package com.reubenpeeris.maven.lombokeclipsecompiler;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
 
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
-import com.reubenpeeris.maven.lombokeclipsecompiler.Utils;
-
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class UtilsTest {
 	private static final String VALID_REGEX = ".*/library-1.jar";
 	private static final String VALID_DESCRIPTION = "my-library jar";
 	private static final String MATCHING_ENTRY = "/path/to/library-1.jar";
 	private static final String NON_MATCHING_ENTRY = "/path/to/library-2.jar";
-	private static final List<String> VALID_LIST = Arrays.asList(
-			MATCHING_ENTRY, NON_MATCHING_ENTRY);
+	private static final List<String> VALID_LIST = Arrays.asList(MATCHING_ENTRY, NON_MATCHING_ENTRY);
 
-	@Test(expected = NullPointerException.class)
+	@Rule
+	public ExpectedException thrown= ExpectedException.none();
+	
+	@Test
 	public void testGetFromListNullRegex() {
-		Utils.getFromList(null, VALID_LIST, VALID_DESCRIPTION);
+		thrown.expect(NullPointerException.class);
+		thrown.expectMessage("regex");
+		
+		Utils.getMatchingPath(null, VALID_LIST, VALID_DESCRIPTION);
 	}
 
-	@Test(expected = NullPointerException.class)
-	public void testGetFromListNullList() {
-		Utils.getFromList(VALID_REGEX, null, VALID_DESCRIPTION);
+	@Test
+	public void testGetFromListNullPaths() {
+		thrown.expect(NullPointerException.class);
+		thrown.expectMessage("paths");
+		
+		Utils.getMatchingPath(VALID_REGEX, null, VALID_DESCRIPTION);
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test
 	public void testGetFromListNullDescription() {
-		Utils.getFromList(VALID_REGEX, VALID_LIST, null);
+		thrown.expect(NullPointerException.class);
+		thrown.expectMessage("description");
+		
+		Utils.getMatchingPath(VALID_REGEX, VALID_LIST, null);
 	}
 
-	@Test(expected = PatternSyntaxException.class)
+	@Test
 	public void testGetFromListInvalidPattern() {
-		Utils.getFromList("*", VALID_LIST, VALID_DESCRIPTION);
+		thrown.expect(PatternSyntaxException.class);
+		
+		Utils.getMatchingPath("*", VALID_LIST, VALID_DESCRIPTION);
 	}
 
 	@Test
 	public void testGetFromListNoMatchingEntries() {
-		String lombokJar = Utils.getFromList(VALID_REGEX,
-				Collections.<String> emptyList(), VALID_DESCRIPTION);
+		String lombokJar = Utils.getMatchingPath(VALID_REGEX, Collections.<String> emptyList(), VALID_DESCRIPTION);
 		assertNull(lombokJar);
 	}
 
@@ -53,24 +69,26 @@ public class UtilsTest {
 	public void testGetFromListNoMultipleEntries() {
 		String regex = ".*";
 		try {
-			Utils.getFromList(regex, VALID_LIST, VALID_DESCRIPTION);
+			Utils.getMatchingPath(regex, VALID_LIST, VALID_DESCRIPTION);
 			fail();
 		} catch (IllegalStateException e) {
 			assertEquals("Multiple " + VALID_DESCRIPTION
-					+ " found using regex '" + regex + "': " + VALID_LIST,
+					+ " found using pattern '" + regex + "': " + VALID_LIST,
 					e.getMessage());
 		}
 	}
 
 	@Test
 	public void testGetFromListValid() {
-		String resultFound = Utils.getFromList(VALID_REGEX, VALID_LIST,
-				VALID_DESCRIPTION);
+		String resultFound = Utils.getMatchingPath(VALID_REGEX, VALID_LIST, VALID_DESCRIPTION);
 		assertEquals(MATCHING_ENTRY, resultFound);
 	}
 
-	@Test(expected = NullPointerException.class)
-	public void testToPathNull() {
+	@Test
+	public void testToPathNList() {
+		thrown.expect(NullPointerException.class);
+		thrown.expectMessage("list");
+		
 		Utils.toPath(null);
 	}
 
@@ -79,42 +97,104 @@ public class UtilsTest {
 		assertEquals("", Utils.toPath(Collections.<String> emptyList()));
 	}
 
-	private List<String> someFiles() throws IOException {
-		int size = 3;
-		List<String> list = new ArrayList<String>(size);
-		for (int i = 0; i < size; i++) {
-			File file = File.createTempFile("toPathTest", null);
-			list.add(file.getAbsolutePath());
-		}
-
-		return list;
+	@Test
+	public void testToPathSlash() throws IOException {
+		verifyToPath("/");
 	}
 
 	@Test
-	public void testToPathSimple() throws IOException {
-		String separator = "-";
-		System.setProperty("path.separator", separator);
-		List<String> someFiles = someFiles();
-		String path = Utils.toPath(someFiles);
-
-		String[] split = path.split(separator);
-		assertEquals(someFiles.size(), split.length);
-		for (int i = 0; i < split.length; i++) {
-			assertEquals(someFiles.get(i), split[i]);
-		}
+	public void testToPathBackSlash() throws IOException {
+		verifyToPath("\\");
 	}
 
 	@Test
-	public void testToPathMissingFile() throws IOException {
-		List<String> actualFiles = someFiles();
-		List<String> fullList = new ArrayList<String>(actualFiles);
-		fullList.add("this is not a file path");
-		String path = Utils.toPath(fullList);
+	public void testFindJavaForLinux() {
+		verifyFindJava("linux", "java");
+	}
 
-		String[] split = path.split(System.getProperty("path.separator"));
-		assertEquals(actualFiles.size(), split.length);
-		for (int i = 0; i < split.length; i++) {
-			assertEquals(actualFiles.get(i), split[i]);
+	@Test
+	public void testFindJavaForWindows() {
+		verifyFindJava("windows", "java.exe");
+	}
+
+	@Test
+	public void testFindJavaFails() {
+		thrown.expect(IllegalStateException.class);
+		thrown.expectMessage("Failed to find the java binary");
+		
+		verifyFindJava("fake", null);
+	}
+	
+	@Test
+	public void testGetJarForWithNullClass() {
+		thrown.expect(NullPointerException.class);
+		thrown.expectMessage("clazz");
+		
+		Utils.getJarFor(null);
+	}
+	
+	@Test
+	public void testGetJarForBootClassLoaderClass() {
+		thrown.expect(IllegalStateException.class);
+		thrown.expectMessage("Class loaded by boot ClassLoader");
+		
+		Utils.getJarFor(Object.class);
+	}
+	
+	@Test
+	public void testGetJarForNoneJarClass() {
+		thrown.expect(IllegalStateException.class);
+		thrown.expectMessage("Class not in a jar");
+		
+		Utils.getJarFor(UtilsTest.class);
+	}
+	
+	@Test
+	public void testGetJarForJarClass() {
+		String jar = Utils.getJarFor(Test.class);
+		File file = new File(jar);
+		
+		assertThat(file.exists(), is(true));
+		assertThat(file.getName(), is(equalTo("junit-4.11.jar")));
+	}
+	
+	private void verifyFindJava(String systemType, String executable) {
+		File folder = new File(getClass().getResource("").getFile());
+		File javaHome = new File(folder, systemType);
+		PropertySetter propertySetter = new PropertySetter("java.home", javaHome.getAbsolutePath());
+		try {
+			File java = Utils.findJava();
+			assertThat(java, is(equalTo(new File(new File(javaHome, "bin"), executable))));
+		} finally {
+			propertySetter.close();
+		}
+	}
+	
+	private void verifyToPath(String separator) {
+		PropertySetter propertySetter = new PropertySetter("path.separator", separator);
+		try {
+			List<String> someFiles = Arrays.asList("one", "two", "three");
+			String path = Utils.toPath(someFiles);
+
+			assertThat(path, is(equalTo("one" + separator + "two" + separator + "three")));
+		} finally {
+			propertySetter.close();
+		}
+	}
+	
+	private static class PropertySetter implements AutoCloseable {
+		private final String property;
+		private final String initialValue;
+		
+		public PropertySetter(String property, String value) {
+			this.property = property;
+			this.initialValue = System.getProperty(property);
+			System.setProperty(property, value);
+		}
+
+		@Override
+		public void close() {
+			System.setProperty(property, initialValue);
 		}
 	}
 }

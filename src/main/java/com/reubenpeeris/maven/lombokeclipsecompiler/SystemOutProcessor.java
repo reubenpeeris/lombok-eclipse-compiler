@@ -12,6 +12,9 @@ public class SystemOutProcessor implements OutputProcessor {
 
     @Override
     public void process(InputStream inputStream) throws IOException {
+    	if (inputStream == null) {
+    		throw new NullPointerException("inputStream");
+    	}
         IOUtil.copy(inputStream, System.out);
     }
 

@@ -6,24 +6,34 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class Utils {
-	public static String getFromList(String regex, List<String> list,
-			String description) {
-		if (regex == null || list == null || description == null) {
-			throw new NullPointerException();
+import org.codehaus.plexus.util.StringUtils;
+
+public final class Utils {
+	private Utils() {}
+	
+	public static String getMatchingPath(String regex, List<String> paths, String description) {
+		if (regex == null) {
+			throw new NullPointerException("regex");
 		}
+		if (paths == null) {
+			throw new NullPointerException("paths");
+		}
+		if (description == null) {
+			throw new NullPointerException("description");
+		}
+		
 		Pattern pattern = Pattern.compile(regex);
 
 		List<String> results = new LinkedList<String>();
-		for (String entry : list) {
-			if (pattern.matcher(entry).matches()) {
-				results.add(entry);
+		for (String path : paths) {
+			String unixPath = path.replace('\\', '/');
+			if (pattern.matcher(unixPath).matches()) {
+				results.add(path);
 			}
 		}
 
 		if (results.size() > 1) {
-			throw new IllegalStateException("Multiple " + description
-					+ " found using regex '" + regex + "': " + results);
+			throw new IllegalStateException("Multiple " + description + " found using pattern '" + regex + "': " + results);
 		}
 		if (results.isEmpty()) {
 			return null;
@@ -32,33 +42,11 @@ public class Utils {
 		return results.get(0);
 	}
 
-	/**
-	 * Returns a path string delimited by the system path.seperator for files that exist in the list.
-	 * 
-	 * @param list
-	 * @return the path for existing files
-	 */
 	public static String toPath(List<String> list) {
 		if (list == null) {
-			throw new NullPointerException();
+			throw  new NullPointerException("list");
 		}
-
-		String delimiter = System.getProperty("path.separator");
-		StringBuilder sb = new StringBuilder();
-		boolean first = true;
-		for (String entry : list) {
-			File file = new File(entry);
-			if (file.exists()) {
-				if (first) {
-					first = false;
-				} else {
-					sb.append(delimiter);
-				}
-				sb.append(entry);
-			}
-		}
-
-		return sb.toString();
+		return StringUtils.join(list.iterator(), System.getProperty("path.separator"));
 	}
 
 	public static File findJava() {
@@ -74,14 +62,17 @@ public class Utils {
 	}
 
 	public static String getJarFor(Class<?> clazz) {
-		String slashClass = clazz.getCanonicalName().replace('.', '/')
-				+ ".class";
+		if (clazz == null) {
+			throw new NullPointerException("clazz");
+		}
+		
+		String slashClass = clazz.getCanonicalName().replace('.', '/') + ".class";
 		if (clazz.getClassLoader() == null) {
-			throw new IllegalStateException("class loaded by boot classpath!");
+			throw new IllegalStateException("Class loaded by boot ClassLoader");
 		}
 		URL url = clazz.getClassLoader().getResource(slashClass);
 		if (!url.getProtocol().equals("jar")) {
-			throw new IllegalStateException();
+			throw new IllegalStateException("Class not in a jar");
 		}
 
 		return url.getFile().replaceFirst("^file:(.*)!.*", "$1");

@@ -14,120 +14,116 @@ import org.codehaus.plexus.compiler.CompilerResult;
 import org.eclipse.jdt.internal.compiler.batch.Main;
 
 import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.findJava;
-import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.getFromList;
+import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.getMatchingPath;
 import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.getJarFor;
 import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.toPath;
 
 public class LombokEclipseCompiler extends AbstractCompiler {
-    private static final String JVM_PROPERTY_PREFIX = "-J";
-    private static final String COMPILER_PROPERTY_PREFIX = "-C";
-    private static final String LOMBOK_JAR_PROPERTY = COMPILER_PROPERTY_PREFIX
-            + "-lombokjar";
-    private static final String DIRECT_OUTPUT_PROPERTY = COMPILER_PROPERTY_PREFIX
-            + "-directoutput";
+	private static final String JVM_PROPERTY_PREFIX = "-J";
+	private static final String MAVEN_PLUGIN_PROPERTY_PREFIX = "-M";
+	private static final String LOMBOK_JAR_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-lombokjar";
+	private static final String DIRECT_OUTPUT_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-directoutput";
 
-    public LombokEclipseCompiler() {
-        super(CompilerOutputStyle.ONE_OUTPUT_FILE_PER_INPUT_FILE, ".java",
-                ".class", null);
-    }
+	public LombokEclipseCompiler() {
+		super(CompilerOutputStyle.ONE_OUTPUT_FILE_PER_INPUT_FILE, ".java", ".class", null);
+	}
 
-    @Override
-    public CompilerResult performCompile(CompilerConfiguration config)
-            throws CompilerException {
-        File javaExe = findJava();
-        String lombokJarRegex = config.getCustomCompilerArgumentsAsMap().get(
-                LOMBOK_JAR_PROPERTY);
-        if (lombokJarRegex == null) {
-            lombokJarRegex = ".*[/\\\\]lombok-[^/\\\\]*\\.jar";
-        }
-        String lombokJar = getFromList(lombokJarRegex,
-                config.getClasspathEntries(), "Lombok jars");
+	@Override
+	public CompilerResult performCompile(CompilerConfiguration config) throws CompilerException {
+		OutputProcessor outputProcessor;
+		if (config.getCustomCompilerArgumentsAsMap().containsKey(DIRECT_OUTPUT_PROPERTY)) {
+			outputProcessor = new SystemOutProcessor();
+		} else {
+			outputProcessor = new ParserProcessor(getLogger());
+		}
+		
+		return runCommand(config.getWorkingDirectory(), createCommandLine(config), outputProcessor);
+	}
+	
+	public CompilerResult runCommand(File workingDirectory, String[] commandLine, OutputProcessor outputProcessor) throws CompilerException {
+		ProcessBuilder pb = new ProcessBuilder(commandLine);
+		pb.redirectErrorStream(true);
+		pb.directory(workingDirectory);
 
-        List<String> commandLine = new ArrayList<String>();
-        commandLine.add(javaExe.getAbsolutePath());
+		try {
+			Process process = pb.start();
 
-        String jdtJar = getJarFor(org.eclipse.jdt.internal.compiler.Compiler.class);
+			outputProcessor.process(process.getInputStream());
+			int result = process.waitFor();
 
-        for (Map.Entry<String, String> entry : config
-                .getCustomCompilerArgumentsAsMap().entrySet()) {
-            if (entry.getKey().startsWith(JVM_PROPERTY_PREFIX)) {
-                commandLine.add(entry.getKey().substring(
-                        JVM_PROPERTY_PREFIX.length()));
-                if (entry.getValue() != null) {
-                    commandLine.add(entry.getValue());
-                }
-            }
-        }
+			return new CompilerResult(result == 0, outputProcessor.getMessages());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (InterruptedException e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-        if (config.getMeminitial() != null) {
-            commandLine.add("-Xms" + config.getMeminitial());
-        }
-        if (config.getMaxmem() != null) {
-            commandLine.add("-Xmx" + config.getMaxmem());
-        }
+	@Override
+	public String[] createCommandLine(CompilerConfiguration config) throws CompilerException {
+		File javaExe = findJava();
+		String lombokJarRegex = config.getCustomCompilerArgumentsAsMap().get(LOMBOK_JAR_PROPERTY);
+		if (lombokJarRegex == null) {
+			lombokJarRegex = "(?:.*/)?lombok-[^/]*\\.jar";
+		}
+		String lombokJar = getMatchingPath(lombokJarRegex, config.getClasspathEntries(), "lombok jars");
 
-        commandLine.add("-Xbootclasspath/a:" + jdtJar);
+		List<String> commandLine = new ArrayList<String>();
+		commandLine.add(javaExe.getAbsolutePath());
 
-        if (lombokJar != null) {
-            // No Kind produces an INFO message in the output
-            // messages.add(new CompilerMessage("Using Lombok from '" +
-            // lombokJar + "'", Kind.NOTE));
-            System.out.println("[INFO] Using Lombok from '" + lombokJar + "'");
-            commandLine.add("-Xbootclasspath/a:" + lombokJar);
-            commandLine.add("-javaagent:" + lombokJar);
-        }
-        commandLine.add(Main.class.getCanonicalName());
-        commandLine.add("-source");
-        commandLine.add(config.getSourceVersion());
-        commandLine.add("-target");
-        commandLine.add(config.getTargetVersion());
-        commandLine.add("-encoding");
-        commandLine.add(config.getSourceEncoding());
-        commandLine.add("-cp");
-        commandLine.add(toPath(config.getClasspathEntries()));
-        commandLine.add("-d");
-        commandLine.add(config.getOutputLocation());
+		String jdtJar = getJarFor(org.eclipse.jdt.internal.compiler.Compiler.class);
 
-        for (Map.Entry<String, String> entry : config
-                .getCustomCompilerArgumentsAsMap().entrySet()) {
-            if (!entry.getKey().startsWith(COMPILER_PROPERTY_PREFIX)
-                    && !entry.getKey().startsWith(JVM_PROPERTY_PREFIX)) {
-                commandLine.add(entry.getKey());
-                if (entry.getValue() != null) {
-                    commandLine.add(entry.getValue());
-                }
-            }
-        }
+		for (Map.Entry<String, String> entry : config.getCustomCompilerArgumentsAsMap().entrySet()) {
+			if (entry.getKey().startsWith(JVM_PROPERTY_PREFIX)) {
+				commandLine.add(entry.getKey().substring(JVM_PROPERTY_PREFIX.length()));
+				if (entry.getValue() != null) {
+					commandLine.add(entry.getValue());
+				}
+			}
+		}
 
-        commandLine.addAll(config.getSourceLocations());
+		if (config.getMeminitial() != null) {
+			commandLine.add("-Xms" + config.getMeminitial());
+		}
+		if (config.getMaxmem() != null) {
+			commandLine.add("-Xmx" + config.getMaxmem());
+		}
 
-        ProcessBuilder pb = new ProcessBuilder(commandLine);
-        pb.redirectErrorStream(true);
-        pb.directory(config.getWorkingDirectory());
+		commandLine.add("-Xbootclasspath/a:" + jdtJar);
 
-        try {
-            Process process = pb.start();
+		if (lombokJar != null) {
+			getLogger().info("Using Lombok from '" + lombokJar + "'");
+			commandLine.add("-Xbootclasspath/a:" + lombokJar);
+			commandLine.add("-javaagent:" + lombokJar);
+		} else {
+			getLogger().info("Lombok not found using pattern '" + lombokJarRegex +"'");
+		}
+		commandLine.add(Main.class.getCanonicalName());
+		commandLine.add("-source");
+		commandLine.add(config.getSourceVersion());
+		commandLine.add("-target");
+		commandLine.add(config.getTargetVersion());
+		commandLine.add("-encoding");
+		commandLine.add(config.getSourceEncoding());
+		commandLine.add("-cp");
+		commandLine.add(toPath(config.getClasspathEntries()));
+		commandLine.add("-d");
+		commandLine.add(config.getOutputLocation());
 
-            OutputProcessor outputProcessor;
-            if (config.getCustomCompilerArgumentsAsMap().containsKey(DIRECT_OUTPUT_PROPERTY)) {
-                outputProcessor = new SystemOutProcessor();
-            } else {
-                outputProcessor = new ParserProcessor();
-            }
-            outputProcessor.process(process.getInputStream());
-            int result = process.waitFor();
+		for (Map.Entry<String, String> entry : config.getCustomCompilerArgumentsAsMap().entrySet()) {
+			if (entry.getKey().startsWith(MAVEN_PLUGIN_PROPERTY_PREFIX)) {
+				if (!entry.getKey().equals(DIRECT_OUTPUT_PROPERTY) && !entry.getKey().equals(LOMBOK_JAR_PROPERTY)) {
+					throw new IllegalArgumentException("Unrecognised property '" + entry.getKey() + "'");
+				}
+			} else if (!entry.getKey().startsWith(JVM_PROPERTY_PREFIX)) {
+				commandLine.add(entry.getKey());
+				if (entry.getValue() != null) {
+					commandLine.add(entry.getValue());
+				}
+			}
+		}
 
-            return new CompilerResult(result == 0, outputProcessor.getMessages());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String[] createCommandLine(CompilerConfiguration config)
-            throws CompilerException {
-        return null;
-    }
+		commandLine.addAll(config.getSourceLocations());
+		return commandLine.toArray(new String[commandLine.size()]);
+	}
 }
