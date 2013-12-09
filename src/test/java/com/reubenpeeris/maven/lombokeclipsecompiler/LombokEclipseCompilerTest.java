@@ -279,29 +279,29 @@ public class LombokEclipseCompilerTest {
 	}
 	
 	@Test
-	public void verifyBasicRunCommand() throws CompilerException {
+	public void verifyBasicRunCommand() {
 		runCommand(rootFolder(), true, Collections.<CompilerMessage>emptyList());
 	}
 	
 	@Test
-	public void verifyRunCommandWorkingDirectory() throws CompilerException, IOException {
+	public void verifyRunCommandWorkingDirectory() throws IOException {
 		File file = File.createTempFile("prefix", "suffix");
 		file.deleteOnExit();
 		runCommand(file.getParentFile(), true, Collections.<CompilerMessage>emptyList());
 	}
 	
 	@Test
-	public void verifyRunCommandExitFailure() throws CompilerException {
+	public void verifyRunCommandExitFailure() {
 		runCommand(rootFolder(), false, Collections.<CompilerMessage>emptyList());
 	}
 	
 	@Test
-	public void verifyRunCommandMessages() throws CompilerException {
+	public void verifyRunCommandMessages() {
 		runCommand(rootFolder(), true, Arrays.asList(new CompilerMessage("A message", Kind.ERROR)));
 	}
 	
 	@Test
-	public void verifyRunCommandArguments() throws CompilerException {
+	public void verifyRunCommandArguments() {
 		runCommand(rootFolder(), true, Collections.<CompilerMessage>emptyList(), "arg-one", "arg-two");
 	}
 	
@@ -335,7 +335,7 @@ public class LombokEclipseCompilerTest {
 		return File.listRoots()[0];
 	}
 	
-	private void runCommand(File workingDirectory, boolean success, List<CompilerMessage> messages, String... arguments) throws CompilerException {
+	private void runCommand(File workingDirectory, boolean success, List<CompilerMessage> messages, String... arguments) {
 		List<String> commandLine = new ArrayList<String>();
 		commandLine.add(Utils.findJava().getAbsolutePath());
 		commandLine.add("-cp");

@@ -15,22 +15,22 @@ import org.codehaus.plexus.compiler.CompilerMessage.Kind;
 import org.codehaus.plexus.logging.Logger;
 
 public class ParserProcessor implements OutputProcessor {
-	private static final Pattern PATTERN = Pattern.compile(
+    private static final Pattern PATTERN = Pattern.compile(
             "\\d+\\. (WARNING|ERROR)\\s*in\\s*(.*) \\(at line (\\d+)\\).*\\n"
-    		+ "[^\\^]*\\n"
-            + "\\s*[\\^]+.*\\n"
-    		+ "(.*)\\n");
-	
+                    + "[^\\^]*\\n"
+                    + "\\s*[\\^]+.*\\n"
+                    + "(.*)\\n");
+
     private final List<CompilerMessage> messages = new ArrayList<CompilerMessage>();
     private final Logger logger;
-    
+
     public ParserProcessor(Logger logger) {
-    	if (logger == null) {
-    		throw new NullPointerException("logger");
-    	}
-    	this.logger = logger;
+        if (logger == null) {
+            throw new NullPointerException("logger");
+        }
+        this.logger = logger;
     }
-    
+
     @Override
     public void process(InputStream inputStream) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -53,7 +53,7 @@ public class ParserProcessor implements OutputProcessor {
         Matcher matcher = PATTERN.matcher(input);
 
         if (matcher.matches()) {
-        	String file = matcher.group(2);
+            String file = matcher.group(2);
             Kind kind = "WARNING".equals(matcher.group(1)) ? Kind.WARNING : Kind.ERROR;
             int startLine = Integer.parseInt(matcher.group(3));
 
@@ -64,16 +64,18 @@ public class ParserProcessor implements OutputProcessor {
             return null;
         }
     }
-    
+
     private void processString(String input) {
-    	if (!input.isEmpty()) {
-	        CompilerMessage message = parseMessage(input);
-	        if (message == null) {
-	            logger.info(input);
-	        } else {
-	            messages.add(message);
-	        }
-    	}
+        if (!input.isEmpty()) {
+            CompilerMessage message = parseMessage(input);
+            if (message == null) {
+                for (String line : input.split("\r?\n")) {
+                    logger.info(line);
+                }
+            } else {
+                messages.add(message);
+            }
+        }
     }
 
     @Override
