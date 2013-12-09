@@ -1,21 +1,22 @@
 package com.reubenpeeris.maven.lombokeclipsecompiler;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+
+import static org.hamcrest.CoreMatchers.*;
 
 public class UtilsTest {
     private static final String VALID_REGEX = ".*/library-1.jar";
@@ -155,6 +156,36 @@ public class UtilsTest {
 
         assertThat(file.exists(), is(true));
         assertThat(file.getName(), is(equalTo("junit-4.11.jar")));
+    }
+
+    @Test
+    public void getFileThrowsForNullResource() {
+        thrown.expect(NullPointerException.class);
+        thrown.expectMessage("resourcePath");
+        Utils.getFile(null);
+    }
+
+    @Test
+    public void getFileThrowsForEmptyResource() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("resourcePath is empty");
+        Utils.getFile("");
+    }
+
+    @Test
+    public void getFileReturnsFileForFileSystemResource() throws IOException {
+        File existingFile = File.createTempFile("testFile", ".txt");
+        existingFile.deleteOnExit();
+        File file = Utils.getFile(existingFile.getAbsolutePath());
+        assertEquals(existingFile.getAbsolutePath(), file.getAbsolutePath());
+    }
+
+    @Test
+    public void getFileReturnsFileWithExpectedContentsForClasspathResource() throws IOException {
+        File file = Utils.getFile("classpathResource");
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(new FileInputStream(file), writer);
+        assertEquals("line one\nline two\n", writer.toString());
     }
 
     private void verifyFindJava(String systemType, String executable) {

@@ -32,7 +32,8 @@ import static org.hamcrest.CoreMatchers.theInstance;
 import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertThat;
+
+import static org.junit.Assert.*;
 
 public class LombokEclipseCompilerTest {
 	private static final int JAVA_INDEX = 0;
@@ -170,6 +171,24 @@ public class LombokEclipseCompilerTest {
 		String[] commandLine = assertCustomArgumens(config, JVM_ARGUMENTS_STARTING_INDEX, argument);
 		assertThat(commandLine[JVM_ARGUMENTS_STARTING_INDEX + 1], startsWith("-Xbootclasspath/a:"));
 	}
+    
+    @Test
+    public void verifyCompilerPropertiesArgumentWithFile() throws CompilerException {
+        String argument =  "-properties";
+        CompilerConfiguration config = configWithCustomArgument(argument, A_STRING);
+        assertCustomArgumens(config, CUSTOM_ARGUMENTS_STARTING_INDEX, argument, new File(A_STRING).getAbsolutePath());
+    }
+    
+    @Test
+    public void verifyCompilerPropertiesArgumentWithClasspathResourceCreatesFile() throws CompilerException {
+        String argument =  "-properties";
+        CompilerConfiguration config = configWithCustomArgument(argument, "classpathResource");
+        String[] commandLine = compiler.createCommandLine(config);
+        String propertiesArgument = commandLine[CUSTOM_ARGUMENTS_STARTING_INDEX];
+        assertThat(propertiesArgument, is(equalTo(argument)));
+        String fileArgument = commandLine[CUSTOM_ARGUMENTS_STARTING_INDEX + 1];
+        assertTrue(new File(fileArgument).exists());
+    }
 	
 	@Test
 	public void verifyCompilerArgumentsWithValue() throws CompilerException {
