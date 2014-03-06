@@ -7,6 +7,6 @@ import java.util.List;
 import org.codehaus.plexus.compiler.CompilerMessage;
 
 public interface OutputProcessor {
-    void process(InputStream inputStream) throws IOException;
-    List<CompilerMessage> getMessages();
+	void process(InputStream inputStream) throws IOException;
+	List<CompilerMessage> getMessages();
 }

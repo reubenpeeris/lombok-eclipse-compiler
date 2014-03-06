@@ -54,7 +54,7 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 			int result = process.waitFor();
 
 			boolean success = result == 0
-			        && (!failOnWarning || outputProcessor.getMessages().isEmpty());
+					&& (!failOnWarning || outputProcessor.getMessages().isEmpty());
 			
 			return new CompilerResult(success, outputProcessor.getMessages());
 		} catch (IOException e) {
@@ -120,7 +120,9 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 				if (!entry.getKey().equals(DIRECT_OUTPUT_PROPERTY)
 						&& !entry.getKey().equals(LOMBOK_JAR_PROPERTY)
 						&& !entry.getKey().equals(FAIL_ON_WARNING_PROPERTY)) {
-					throw new IllegalArgumentException("Unrecognised property '" + entry.getKey() + "'");
+					String message = "Unrecognized option: " + entry.getKey();
+					getLogger().error(message);
+					throw new IllegalArgumentException(message);
 				}
 			} else if (!entry.getKey().startsWith(JVM_PROPERTY_PREFIX)) {
 				commandLine.add(entry.getKey());

@@ -26,7 +26,7 @@ public class Program {
 		
 		boolean fail = args.length > 0 && "FAIL".equals(args[0]);
 		
-		String  arguments = StringUtils.join(args, ",");
+		String arguments = StringUtils.join(args, ",");
 		if (fail) {
 			arguments = arguments.replaceFirst("[^,]*", "");
 		}

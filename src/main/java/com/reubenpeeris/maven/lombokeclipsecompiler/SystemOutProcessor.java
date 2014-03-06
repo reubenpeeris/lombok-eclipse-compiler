@@ -10,16 +10,16 @@ import org.codehaus.plexus.util.IOUtil;
 
 public class SystemOutProcessor implements OutputProcessor {
 
-    @Override
-    public void process(InputStream inputStream) throws IOException {
-    	if (inputStream == null) {
-    		throw new NullPointerException("inputStream");
-    	}
-        IOUtil.copy(inputStream, System.out);
-    }
+	@Override
+	public void process(InputStream inputStream) throws IOException {
+		if (inputStream == null) {
+			throw new NullPointerException("inputStream");
+		}
+		IOUtil.copy(inputStream, System.out);
+	}
 
-    @Override
-    public List<CompilerMessage> getMessages() {
-        return Collections.emptyList();
-    }
+	@Override
+	public List<CompilerMessage> getMessages() {
+		return Collections.emptyList();
+	}
 }

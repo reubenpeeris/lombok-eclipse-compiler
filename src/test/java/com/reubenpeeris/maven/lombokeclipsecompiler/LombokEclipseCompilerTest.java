@@ -224,7 +224,7 @@ public class LombokEclipseCompilerTest {
 		String argument =  "-M-fake";
 		CompilerConfiguration config = configWithCustomArgument(argument, A_STRING);
 		thrown.expect(IllegalArgumentException.class);
-		thrown.expectMessage("Unrecognised property '" + argument + "'");
+		thrown.expectMessage("Unrecognized option: " + argument);
 		assertCustomArgumens(config, CUSTOM_ARGUMENTS_STARTING_INDEX, argument, A_STRING);
 	}
 	
