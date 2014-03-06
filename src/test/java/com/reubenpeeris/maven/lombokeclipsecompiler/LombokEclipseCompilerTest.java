@@ -220,15 +220,6 @@ public class LombokEclipseCompilerTest {
 	}
 	
 	@Test
-	public void verifyInvalidMavenArgemnetThrows() throws CompilerException {
-		String argument =  "-M-fake";
-		CompilerConfiguration config = configWithCustomArgument(argument, A_STRING);
-		thrown.expect(IllegalArgumentException.class);
-		thrown.expectMessage("Unrecognized option: " + argument);
-		assertCustomArgumens(config, CUSTOM_ARGUMENTS_STARTING_INDEX, argument, A_STRING);
-	}
-	
-	@Test
 	public void verifyUnixLombokJarAddedToArguments() throws CompilerException {
 		assertLombokJar("/usr/share/lombok/lombok-0.12.jar", null);
 	}
@@ -293,7 +284,7 @@ public class LombokEclipseCompilerTest {
 	public void verifySystemOutProcessor() throws CompilerException {
 		LombokEclipseCompilerAsserter compiler = assertingCompiler();
 		compiler.outputProcessor(SystemOutProcessor.class);
-		CompilerConfiguration config = configWithCustomArgument("-M-directoutput", null);
+		CompilerConfiguration config = configWithCustomArgument("-directoutput", null);
 		compiler.performCompile(config);
 	}
 	
@@ -399,7 +390,7 @@ public class LombokEclipseCompilerTest {
 		config.addClasspathEntry(jar);
 		if (pattern != null) {
 			Map<String, String> customCompilerArguments = new HashMap<String, String>();
-			customCompilerArguments.put("-M-lombokjar", pattern);
+			customCompilerArguments.put("-lombokjar", pattern);
 			config.setCustomCompilerArgumentsAsMap(customCompilerArguments);
 		}
 		

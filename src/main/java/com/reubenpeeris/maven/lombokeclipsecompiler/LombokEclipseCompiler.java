@@ -3,8 +3,12 @@ package com.reubenpeeris.maven.lombokeclipsecompiler;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.codehaus.plexus.compiler.AbstractCompiler;
 import org.codehaus.plexus.compiler.CompilerConfiguration;
@@ -17,11 +21,15 @@ import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.*;
 
 public class LombokEclipseCompiler extends AbstractCompiler {
 	private static final String JVM_PROPERTY_PREFIX = "-J";
-	private static final String MAVEN_PLUGIN_PROPERTY_PREFIX = "-M";
-	private static final String LOMBOK_JAR_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-lombokjar";
-	private static final String DIRECT_OUTPUT_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-directoutput";
-	private static final String FAIL_ON_WARNING_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-failOnWarning";
-
+	private static final String LOMBOK_JAR_PROPERTY = "-lombokjar";
+	private static final String DIRECT_OUTPUT_PROPERTY = "-directoutput";
+	private static final String FAIL_ON_WARNING_PROPERTY = "-failOnWarning";
+	private static final Set<String> CUSTOM_ARGUMENTS = Collections.unmodifiableSet(
+			new HashSet<String>(Arrays.asList(
+			LOMBOK_JAR_PROPERTY,
+			DIRECT_OUTPUT_PROPERTY,
+			FAIL_ON_WARNING_PROPERTY)));
+	
 	public LombokEclipseCompiler() {
 		super(CompilerOutputStyle.ONE_OUTPUT_FILE_PER_INPUT_FILE, ".java", ".class", null);
 	}
@@ -116,15 +124,8 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 		commandLine.add(config.getOutputLocation());
 
 		for (Map.Entry<String, String> entry : config.getCustomCompilerArgumentsAsMap().entrySet()) {
-			if (entry.getKey().startsWith(MAVEN_PLUGIN_PROPERTY_PREFIX)) {
-				if (!entry.getKey().equals(DIRECT_OUTPUT_PROPERTY)
-						&& !entry.getKey().equals(LOMBOK_JAR_PROPERTY)
-						&& !entry.getKey().equals(FAIL_ON_WARNING_PROPERTY)) {
-					String message = "Unrecognized option: " + entry.getKey();
-					getLogger().error(message);
-					throw new IllegalArgumentException(message);
-				}
-			} else if (!entry.getKey().startsWith(JVM_PROPERTY_PREFIX)) {
+			if (!entry.getKey().startsWith(JVM_PROPERTY_PREFIX)
+					&& !CUSTOM_ARGUMENTS.contains(entry.getKey())) {
 				commandLine.add(entry.getKey());
 				if (entry.getKey().equals("-properties")) {
 					commandLine.add(Utils.getFile(entry.getValue()).getAbsolutePath());
