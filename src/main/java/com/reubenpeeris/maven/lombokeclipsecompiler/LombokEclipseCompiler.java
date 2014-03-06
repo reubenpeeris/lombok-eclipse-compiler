@@ -20,6 +20,7 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 	private static final String MAVEN_PLUGIN_PROPERTY_PREFIX = "-M";
 	private static final String LOMBOK_JAR_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-lombokjar";
 	private static final String DIRECT_OUTPUT_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-directoutput";
+	private static final String FAIL_ON_WARNING_PROPERTY = MAVEN_PLUGIN_PROPERTY_PREFIX + "-failOnWarning";
 
 	public LombokEclipseCompiler() {
 		super(CompilerOutputStyle.ONE_OUTPUT_FILE_PER_INPUT_FILE, ".java", ".class", null);
@@ -33,11 +34,15 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 		} else {
 			outputProcessor = new ParserProcessor(getLogger());
 		}
-
-		return runCommand(config.getWorkingDirectory(), createCommandLine(config), outputProcessor);
+		
+		return runCommand(config.getWorkingDirectory(), createCommandLine(config), failOnWarning(config), outputProcessor);
 	}
 
-	public CompilerResult runCommand(File workingDirectory, String[] commandLine, OutputProcessor outputProcessor) {
+	private boolean failOnWarning(CompilerConfiguration config) {
+		return config.getCustomCompilerArgumentsAsMap().containsKey(FAIL_ON_WARNING_PROPERTY);
+	}
+
+	public CompilerResult runCommand(File workingDirectory, String[] commandLine, boolean failOnWarning, OutputProcessor outputProcessor) {
 		ProcessBuilder pb = new ProcessBuilder(commandLine);
 		pb.redirectErrorStream(true);
 		pb.directory(workingDirectory);
@@ -48,7 +53,10 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 			outputProcessor.process(process.getInputStream());
 			int result = process.waitFor();
 
-			return new CompilerResult(result == 0, outputProcessor.getMessages());
+			boolean success = result == 0
+			        && (!failOnWarning || outputProcessor.getMessages().isEmpty());
+			
+			return new CompilerResult(success, outputProcessor.getMessages());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (InterruptedException e) {
@@ -109,7 +117,9 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 
 		for (Map.Entry<String, String> entry : config.getCustomCompilerArgumentsAsMap().entrySet()) {
 			if (entry.getKey().startsWith(MAVEN_PLUGIN_PROPERTY_PREFIX)) {
-				if (!entry.getKey().equals(DIRECT_OUTPUT_PROPERTY) && !entry.getKey().equals(LOMBOK_JAR_PROPERTY)) {
+				if (!entry.getKey().equals(DIRECT_OUTPUT_PROPERTY)
+						&& !entry.getKey().equals(LOMBOK_JAR_PROPERTY)
+						&& !entry.getKey().equals(FAIL_ON_WARNING_PROPERTY)) {
 					throw new IllegalArgumentException("Unrecognised property '" + entry.getKey() + "'");
 				}
 			} else if (!entry.getKey().startsWith(JVM_PROPERTY_PREFIX)) {

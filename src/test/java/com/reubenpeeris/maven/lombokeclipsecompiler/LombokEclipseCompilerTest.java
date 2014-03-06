@@ -171,24 +171,24 @@ public class LombokEclipseCompilerTest {
 		String[] commandLine = assertCustomArgumens(config, JVM_ARGUMENTS_STARTING_INDEX, argument);
 		assertThat(commandLine[JVM_ARGUMENTS_STARTING_INDEX + 1], startsWith("-Xbootclasspath/a:"));
 	}
-    
-    @Test
-    public void verifyCompilerPropertiesArgumentWithFile() throws CompilerException {
-        String argument =  "-properties";
-        CompilerConfiguration config = configWithCustomArgument(argument, A_STRING);
-        assertCustomArgumens(config, CUSTOM_ARGUMENTS_STARTING_INDEX, argument, new File(A_STRING).getAbsolutePath());
-    }
-    
-    @Test
-    public void verifyCompilerPropertiesArgumentWithClasspathResourceCreatesFile() throws CompilerException {
-        String argument =  "-properties";
-        CompilerConfiguration config = configWithCustomArgument(argument, "classpathResource");
-        String[] commandLine = compiler.createCommandLine(config);
-        String propertiesArgument = commandLine[CUSTOM_ARGUMENTS_STARTING_INDEX];
-        assertThat(propertiesArgument, is(equalTo(argument)));
-        String fileArgument = commandLine[CUSTOM_ARGUMENTS_STARTING_INDEX + 1];
-        assertTrue(new File(fileArgument).exists());
-    }
+	
+	@Test
+	public void verifyCompilerPropertiesArgumentWithFile() throws CompilerException {
+		String argument =  "-properties";
+		CompilerConfiguration config = configWithCustomArgument(argument, A_STRING);
+		assertCustomArgumens(config, CUSTOM_ARGUMENTS_STARTING_INDEX, argument, new File(A_STRING).getAbsolutePath());
+	}
+	
+	@Test
+	public void verifyCompilerPropertiesArgumentWithClasspathResourceCreatesFile() throws CompilerException {
+		String argument =  "-properties";
+		CompilerConfiguration config = configWithCustomArgument(argument, "classpathResource");
+		String[] commandLine = compiler.createCommandLine(config);
+		String propertiesArgument = commandLine[CUSTOM_ARGUMENTS_STARTING_INDEX];
+		assertThat(propertiesArgument, is(equalTo(argument)));
+		String fileArgument = commandLine[CUSTOM_ARGUMENTS_STARTING_INDEX + 1];
+		assertTrue(new File(fileArgument).exists());
+	}
 	
 	@Test
 	public void verifyCompilerArgumentsWithValue() throws CompilerException {
@@ -299,29 +299,39 @@ public class LombokEclipseCompilerTest {
 	
 	@Test
 	public void verifyBasicRunCommand() {
-		runCommand(rootFolder(), true, Collections.<CompilerMessage>emptyList());
+		runCommand(rootFolder(), true, true, false, Collections.<CompilerMessage>emptyList());
 	}
 	
 	@Test
 	public void verifyRunCommandWorkingDirectory() throws IOException {
 		File file = File.createTempFile("prefix", "suffix");
 		file.deleteOnExit();
-		runCommand(file.getParentFile(), true, Collections.<CompilerMessage>emptyList());
+		runCommand(file.getParentFile(), true, true, false, Collections.<CompilerMessage>emptyList());
 	}
 	
 	@Test
 	public void verifyRunCommandExitFailure() {
-		runCommand(rootFolder(), false, Collections.<CompilerMessage>emptyList());
+		runCommand(rootFolder(), false, false, false, Collections.<CompilerMessage>emptyList());
 	}
 	
 	@Test
 	public void verifyRunCommandMessages() {
-		runCommand(rootFolder(), true, Arrays.asList(new CompilerMessage("A message", Kind.ERROR)));
+		runCommand(rootFolder(), true, true, false, Arrays.asList(new CompilerMessage("A message", Kind.ERROR)));
+	}
+	
+	@Test
+	public void verifyRunCommandWithWarning() {
+		runCommand(rootFolder(), true, true, false, Arrays.asList(new CompilerMessage("A message", Kind.WARNING)));
+	}
+	
+	@Test
+	public void verifyRunCommandWithWarningAndFailOnWarning() {
+		runCommand(rootFolder(), true, false, true, Arrays.asList(new CompilerMessage("A message", Kind.WARNING)), "-M-failOnWarning");
 	}
 	
 	@Test
 	public void verifyRunCommandArguments() {
-		runCommand(rootFolder(), true, Collections.<CompilerMessage>emptyList(), "arg-one", "arg-two");
+		runCommand(rootFolder(), true, true, false, Collections.<CompilerMessage>emptyList(), "arg-one", "arg-two");
 	}
 	
 	@Test
@@ -354,7 +364,7 @@ public class LombokEclipseCompilerTest {
 		return File.listRoots()[0];
 	}
 	
-	private void runCommand(File workingDirectory, boolean success, List<CompilerMessage> messages, String... arguments) {
+	private void runCommand(File workingDirectory, boolean success, boolean expectedSuccess, boolean failOnWarning, List<CompilerMessage> messages, String... arguments) {
 		List<String> commandLine = new ArrayList<String>();
 		commandLine.add(Utils.findJava().getAbsolutePath());
 		commandLine.add("-cp");
@@ -368,12 +378,12 @@ public class LombokEclipseCompilerTest {
 		ProgramParsingProcessor processor = new Program.ProgramParsingProcessor();
 		processor.setMessages(messages);
 
-		CompilerResult result = compiler.runCommand(workingDirectory, commandLine.toArray(new String[commandLine.size()]), processor);
+		CompilerResult result = compiler.runCommand(workingDirectory, commandLine.toArray(new String[commandLine.size()]), failOnWarning, processor);
 		
 		assertThat(processor.getArguments(), is(equalTo(arguments)));
 		assertThat(processor.getWorkingDirectory(), is(equalTo(workingDirectory)));
 		
-		assertThat(result.isSuccess(), is(equalTo(success)));
+		assertThat(result.isSuccess(), is(equalTo(expectedSuccess)));
 		assertThat(result.getCompilerMessages(), is(equalTo(messages)));
 	}
 	
