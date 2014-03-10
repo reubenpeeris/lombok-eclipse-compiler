@@ -32,7 +32,6 @@ import static org.hamcrest.CoreMatchers.theInstance;
 import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.IsEqual.equalTo;
-
 import static org.junit.Assert.*;
 
 public class LombokEclipseCompilerTest {
@@ -317,9 +316,9 @@ public class LombokEclipseCompilerTest {
 	
 	@Test
 	public void verifyRunCommandWithWarningAndFailOnWarning() {
-		runCommand(rootFolder(), true, false, true, Arrays.asList(new CompilerMessage("A message", Kind.WARNING)), "-M-failOnWarning");
+		runCommand(rootFolder(), true, false, true, Arrays.asList(new CompilerMessage("A message", Kind.WARNING)), LombokEclipseCompiler.W_ERROR_MESSAGE, "-M-failOnWarning");
 	}
-	
+
 	@Test
 	public void verifyRunCommandArguments() {
 		runCommand(rootFolder(), true, true, false, Collections.<CompilerMessage>emptyList(), "arg-one", "arg-two");
@@ -355,7 +354,12 @@ public class LombokEclipseCompilerTest {
 		return File.listRoots()[0];
 	}
 	
+
 	private void runCommand(File workingDirectory, boolean success, boolean expectedSuccess, boolean failOnWarning, List<CompilerMessage> messages, String... arguments) {
+		runCommand(workingDirectory, success, expectedSuccess, failOnWarning, messages, null, arguments);
+	}
+	
+	private void runCommand(File workingDirectory, boolean success, boolean expectedSuccess, boolean failOnWarning, List<CompilerMessage> messages, CompilerMessage additionalMessage, String... arguments) {
 		List<String> commandLine = new ArrayList<String>();
 		commandLine.add(Utils.findJava().getAbsolutePath());
 		commandLine.add("-cp");
@@ -367,7 +371,7 @@ public class LombokEclipseCompilerTest {
 		}
 		commandLine.addAll(Arrays.asList(arguments));
 		ProgramParsingProcessor processor = new Program.ProgramParsingProcessor();
-		processor.setMessages(messages);
+		processor.setMessages(new ArrayList<CompilerMessage>(messages));
 
 		CompilerResult result = compiler.runCommand(workingDirectory, commandLine.toArray(new String[commandLine.size()]), failOnWarning, processor);
 		
@@ -375,7 +379,11 @@ public class LombokEclipseCompilerTest {
 		assertThat(processor.getWorkingDirectory(), is(equalTo(workingDirectory)));
 		
 		assertThat(result.isSuccess(), is(equalTo(expectedSuccess)));
-		assertThat(result.getCompilerMessages(), is(equalTo(messages)));
+		List<CompilerMessage> expectedMessages = new ArrayList<CompilerMessage>(messages);
+		if (additionalMessage != null) {
+			expectedMessages.add(additionalMessage);
+		}
+		assertThat(result.getCompilerMessages(), is(equalTo(expectedMessages)));
 	}
 	
 	private LombokEclipseCompilerAsserter assertingCompiler() {

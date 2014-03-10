@@ -1,5 +1,7 @@
 package com.reubenpeeris.maven.lombokeclipsecompiler;
 
+import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,22 +15,23 @@ import java.util.Set;
 import org.codehaus.plexus.compiler.AbstractCompiler;
 import org.codehaus.plexus.compiler.CompilerConfiguration;
 import org.codehaus.plexus.compiler.CompilerException;
+import org.codehaus.plexus.compiler.CompilerMessage;
+import org.codehaus.plexus.compiler.CompilerMessage.Kind;
 import org.codehaus.plexus.compiler.CompilerOutputStyle;
 import org.codehaus.plexus.compiler.CompilerResult;
 import org.eclipse.jdt.internal.compiler.batch.Main;
-
-import static com.reubenpeeris.maven.lombokeclipsecompiler.Utils.*;
 
 public class LombokEclipseCompiler extends AbstractCompiler {
 	private static final String JVM_PROPERTY_PREFIX = "-J";
 	private static final String LOMBOK_JAR_PROPERTY = "-lombokjar";
 	private static final String DIRECT_OUTPUT_PROPERTY = "-directoutput";
-	private static final String FAIL_ON_WARNING_PROPERTY = "-failOnWarning";
+	private static final String FAIL_ON_WARNING_PROPERTY = "-Werror";
 	private static final Set<String> CUSTOM_ARGUMENTS = Collections.unmodifiableSet(
 			new HashSet<String>(Arrays.asList(
 			LOMBOK_JAR_PROPERTY,
 			DIRECT_OUTPUT_PROPERTY,
 			FAIL_ON_WARNING_PROPERTY)));
+	static final CompilerMessage W_ERROR_MESSAGE = new CompilerMessage("Warnings found and -Werror specified", Kind.ERROR);
 	
 	public LombokEclipseCompiler() {
 		super(CompilerOutputStyle.ONE_OUTPUT_FILE_PER_INPUT_FILE, ".java", ".class", null);
@@ -61,10 +64,12 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 			outputProcessor.process(process.getInputStream());
 			int result = process.waitFor();
 
-			boolean success = result == 0
-					&& (!failOnWarning || outputProcessor.getMessages().isEmpty());
+			if (result == 0 && failOnWarning && !outputProcessor.getMessages().isEmpty()) {
+				outputProcessor.getMessages().add(W_ERROR_MESSAGE);
+				result = 1;
+			}
 			
-			return new CompilerResult(success, outputProcessor.getMessages());
+			return new CompilerResult(result == 0, outputProcessor.getMessages());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (InterruptedException e) {
