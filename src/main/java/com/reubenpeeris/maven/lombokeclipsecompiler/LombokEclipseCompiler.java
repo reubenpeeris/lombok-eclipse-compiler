@@ -54,6 +54,7 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 	}
 
 	public CompilerResult runCommand(File workingDirectory, String[] commandLine, boolean failOnWarning, OutputProcessor outputProcessor) {
+		getLogger().debug("CommandLine: " + Arrays.toString(commandLine));
 		ProcessBuilder pb = new ProcessBuilder(commandLine);
 		pb.redirectErrorStream(true);
 		pb.directory(workingDirectory);
