@@ -111,11 +111,11 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 		commandLine.add("-Xbootclasspath/a:" + jdtJar);
 
 		if (lombokJar != null) {
-			getLogger().info("Using Lombok from '" + lombokJar + "'");
+			getLogger().debug("Using Lombok from '" + lombokJar + "'");
 			commandLine.add("-Xbootclasspath/a:" + lombokJar);
 			commandLine.add("-javaagent:" + lombokJar);
 		} else {
-			getLogger().info("Lombok not found using pattern '" + lombokJarRegex + "'");
+			getLogger().debug("Lombok not found using pattern '" + lombokJarRegex + "'");
 		}
 		commandLine.add(Main.class.getCanonicalName());
 		commandLine.add("-source");

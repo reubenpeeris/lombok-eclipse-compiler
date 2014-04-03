@@ -266,7 +266,7 @@ public class LombokEclipseCompilerTest {
 		CompilerConfiguration config = newCompilerConfiguration();
 		compiler.createCommandLine(config);
 
-		assertThat(logger.getMessages(), contains(new Message(Logger.LEVEL_INFO, "Lombok not found using pattern '(?:.*/)?lombok-[^/]*\\.jar'")));
+		assertThat(logger.getMessages(), contains(new Message(Logger.LEVEL_DEBUG, "Lombok not found using pattern '(?:.*/)?lombok-[^/]*\\.jar'")));
 	}
 
 	@Test
@@ -275,7 +275,7 @@ public class LombokEclipseCompilerTest {
 		config.addClasspathEntry("lombok-0.1.jar");
 		compiler.createCommandLine(config);
 
-		assertThat(logger.getMessages(), contains(new Message(Logger.LEVEL_INFO, "Using Lombok from 'lombok-0.1.jar'")));
+		assertThat(logger.getMessages(), contains(new Message(Logger.LEVEL_DEBUG, "Using Lombok from 'lombok-0.1.jar'")));
 	}
 
 	@Test
