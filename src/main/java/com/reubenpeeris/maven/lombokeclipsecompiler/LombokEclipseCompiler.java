@@ -32,7 +32,7 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 			DIRECT_OUTPUT_PROPERTY,
 			FAIL_ON_WARNING_PROPERTY)));
 	static final CompilerMessage W_ERROR_MESSAGE = new CompilerMessage("Warnings found and -Werror specified", Kind.ERROR);
-	
+
 	public LombokEclipseCompiler() {
 		super(CompilerOutputStyle.ONE_OUTPUT_FILE_PER_INPUT_FILE, ".java", ".class", null);
 	}
@@ -45,7 +45,7 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 		} else {
 			outputProcessor = new ParserProcessor(getLogger());
 		}
-		
+
 		return runCommand(config.getWorkingDirectory(), createCommandLine(config), failOnWarning(config), outputProcessor);
 	}
 
@@ -69,7 +69,7 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 				outputProcessor.getMessages().add(W_ERROR_MESSAGE);
 				result = 1;
 			}
-			
+
 			return new CompilerResult(result == 0, outputProcessor.getMessages());
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -115,15 +115,17 @@ public class LombokEclipseCompiler extends AbstractCompiler {
 			commandLine.add("-Xbootclasspath/a:" + lombokJar);
 			commandLine.add("-javaagent:" + lombokJar);
 		} else {
-			getLogger().info("Lombok not found using pattern '" + lombokJarRegex +"'");
+			getLogger().info("Lombok not found using pattern '" + lombokJarRegex + "'");
 		}
 		commandLine.add(Main.class.getCanonicalName());
 		commandLine.add("-source");
 		commandLine.add(config.getSourceVersion());
 		commandLine.add("-target");
 		commandLine.add(config.getTargetVersion());
-		commandLine.add("-encoding");
-		commandLine.add(config.getSourceEncoding());
+		if (config.getSourceEncoding() != null) {
+			commandLine.add("-encoding");
+			commandLine.add(config.getSourceEncoding());
+		}
 		commandLine.add("-cp");
 		commandLine.add(toPath(config.getClasspathEntries()));
 		commandLine.add("-d");

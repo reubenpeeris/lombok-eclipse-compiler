@@ -24,8 +24,8 @@ import org.junit.rules.ExpectedException;
 import com.reubenpeeris.maven.lombokeclipsecompiler.ListLogger.Message;
 import com.reubenpeeris.maven.lombokeclipsecompiler.Program.ProgramParsingProcessor;
 
-import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.CoreMatchers.theInstance;
@@ -87,7 +87,7 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void verifyStaticCommandLineArgumens() throws CompilerException {
-		String[] commandLine = compiler.createCommandLine(new CompilerConfiguration());
+		String[] commandLine = compiler.createCommandLine(newCompilerConfiguration());
 
 		assertThat(commandLine[MAIN_CLASS_INDEX], is(equalTo("org.eclipse.jdt.internal.compiler.batch.Main")));
 		assertThat(commandLine[_SOURCE_INDEX], is(equalTo("-source")));
@@ -95,7 +95,7 @@ public class LombokEclipseCompilerTest {
 		assertThat(commandLine[_TARGET_INDEX], is(equalTo("-target")));
 		assertThat(commandLine[TARGET_INDEX], is(nullValue()));
 		assertThat(commandLine[_ENCODING_INDEX], is(equalTo("-encoding")));
-		assertThat(commandLine[ENCODING_INDEX], is(nullValue()));
+		assertThat(commandLine[ENCODING_INDEX], is(equalTo("UTF-8")));
 		assertThat(commandLine[_CLASSPATH_INDEX], is(equalTo("-cp")));
 		assertThat(commandLine[CLASSPATH_INDEX], is(equalTo("")));
 		assertThat(commandLine[_DESTINATION_INDEX], is(equalTo("-d")));
@@ -105,14 +105,21 @@ public class LombokEclipseCompilerTest {
 	}
 
 	@Test
-	public void verifyJavaCommandLineArgument() throws CompilerException {
+	public void verifyEncodingArgumentNotPresentForNullEncoding() throws CompilerException {
 		String[] commandLine = compiler.createCommandLine(new CompilerConfiguration());
+
+		assertThat(commandLine[_ENCODING_INDEX], is(not(equalTo("-encoding"))));
+	}
+
+	@Test
+	public void verifyJavaCommandLineArgument() throws CompilerException {
+		String[] commandLine = compiler.createCommandLine(newCompilerConfiguration());
 		assertThat(commandLine[JAVA_INDEX], is(equalTo(Utils.findJava().getAbsolutePath())));
 	}
 
 	@Test
 	public void verifyComplierJarCommandLineArgument() throws CompilerException {
-		String[] commandLine = compiler.createCommandLine(new CompilerConfiguration());
+		String[] commandLine = compiler.createCommandLine(newCompilerConfiguration());
 		assertThat(commandLine[COMPILER_JAR_INDEX], startsWith("-Xbootclasspath/a:"));
 		assertThat(commandLine[COMPILER_JAR_INDEX] + " should be JDT jar path",
 				commandLine[COMPILER_JAR_INDEX].matches(
@@ -121,35 +128,35 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void verifySourceCommandLineArgument() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.setSourceVersion(A_STRING);
 		assertCommandLineArgument(config, SOURCE_INDEX);
 	}
 
 	@Test
 	public void verifyTargetCommandLineArgument() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.setTargetVersion(A_STRING);
 		assertCommandLineArgument(config, TARGET_INDEX);
 	}
 
 	@Test
 	public void verifyEncodingCommandLineArgument() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.setSourceEncoding(A_STRING);
 		assertCommandLineArgument(config, ENCODING_INDEX);
 	}
 
 	@Test
 	public void verifyDestinationCommandLineArgument() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.setOutputLocation(A_STRING);
 		assertCommandLineArgument(config, DESTINATION_INDEX);
 	}
 
 	@Test
 	public void verifyClasspathCommandLineArgumentForMultipleEntries() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		List<String> entries = Arrays.asList("one", "two", "three");
 		config.setClasspathEntries(entries);
 		String[] commandLine = compiler.createCommandLine(config);
@@ -206,14 +213,14 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void verifyInitialMemoryArguments() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.setMeminitial(A_STRING);
 		assertCustomArgumens(config, JVM_ARGUMENTS_STARTING_INDEX, "-Xms" + A_STRING);
 	}
 
 	@Test
 	public void verifyMaxMemoryArguments() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.setMaxmem(A_STRING);
 		assertCustomArgumens(config, JVM_ARGUMENTS_STARTING_INDEX, "-Xmx" + A_STRING);
 	}
@@ -245,7 +252,7 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void multipleLombokJarsThrows() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.addClasspathEntry("lombok-0.1.jar");
 		config.addClasspathEntry("lombok-0.2.jar");
 
@@ -256,7 +263,7 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void verifyLombokNotFoundMessage() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		compiler.createCommandLine(config);
 
 		assertThat(logger.getMessages(), contains(new Message(Logger.LEVEL_INFO, "Lombok not found using pattern '(?:.*/)?lombok-[^/]*\\.jar'")));
@@ -264,7 +271,7 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void verifyLombokFoundMessage() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.addClasspathEntry("lombok-0.1.jar");
 		compiler.createCommandLine(config);
 
@@ -275,7 +282,7 @@ public class LombokEclipseCompilerTest {
 	public void verifyDefaultOutputIsParser() throws CompilerException {
 		LombokEclipseCompilerAsserter compiler = assertingCompiler();
 		compiler.outputProcessor(ParserProcessor.class);
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		compiler.performCompile(config);
 	}
 
@@ -327,7 +334,7 @@ public class LombokEclipseCompilerTest {
 	@Test
 	public void verifyPerformCompileWorkingDirectory() throws CompilerException {
 		File workingDirectory = rootFolder();
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.setWorkingDirectory(workingDirectory);
 
 		assertingCompiler().workingDirectory(workingDirectory).performCompile(config);
@@ -335,7 +342,7 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void verifyPerformCompileArgumnets() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		String[] expectedCommandLine = compiler.createCommandLine(config);
 
 		assertingCompiler().commandLine(expectedCommandLine).performCompile(config);
@@ -343,11 +350,17 @@ public class LombokEclipseCompilerTest {
 
 	@Test
 	public void verifyPerformCompileCompilerResult() throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		CompilerResult expectedCompilerResult = new CompilerResult();
 
 		CompilerResult result = assertingCompiler().compilerResult(expectedCompilerResult).performCompile(config);
 		assertThat(result, theInstance(expectedCompilerResult));
+	}
+
+	private CompilerConfiguration newCompilerConfiguration() {
+		CompilerConfiguration compilerConfiguration = new CompilerConfiguration();
+		compilerConfiguration.setSourceEncoding("UTF-8");
+		return compilerConfiguration;
 	}
 
 	private File rootFolder() {
@@ -394,7 +407,7 @@ public class LombokEclipseCompilerTest {
 	}
 
 	private void assertLombokJar(String jar, String pattern) throws CompilerException {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		config.addClasspathEntry(jar);
 		if (pattern != null) {
 			Map<String, String> customCompilerArguments = new HashMap<String, String>();
@@ -406,7 +419,7 @@ public class LombokEclipseCompilerTest {
 	}
 
 	private CompilerConfiguration configWithCustomArgument(String property, String value) {
-		CompilerConfiguration config = new CompilerConfiguration();
+		CompilerConfiguration config = newCompilerConfiguration();
 		Map<String, String> customCompilerArguments = new HashMap<String, String>();
 		customCompilerArguments.put(property, value);
 		config.setCustomCompilerArgumentsAsMap(customCompilerArguments);
@@ -429,3 +442,4 @@ public class LombokEclipseCompilerTest {
 		assertThat(commandLine[index], is(equalTo(A_STRING)));
 	}
 }
+
