@@ -123,7 +123,7 @@ public class LombokEclipseCompilerTest {
 		assertThat(commandLine[COMPILER_JAR_INDEX], startsWith("-Xbootclasspath/a:"));
 		assertThat(commandLine[COMPILER_JAR_INDEX] + " should be JDT jar path",
 				commandLine[COMPILER_JAR_INDEX].matches(
-				"-Xbootclasspath/a:.*/com/reubenpeeris/org.eclipse.jdt.core/.*/org.eclipse.jdt.core-.*.jar"), is(true));
+				"-Xbootclasspath/a:.*org/eclipse/jdt/core/compiler/ecj/.*/ecj-.*.jar"), is(true));
 	}
 
 	@Test

@@ -185,7 +185,7 @@ public class UtilsTest {
 		File file = Utils.getFile("classpathResource");
 		StringWriter writer = new StringWriter();
 		IOUtils.copy(new FileInputStream(file), writer);
-		assertEquals("line one\nline two\n", writer.toString());
+		assertEquals("this is a resource on the classpath", writer.toString());
 	}
 
 	private void verifyFindJava(String systemType, String executable) {
