@@ -21,18 +21,14 @@
 	
 	<scm>
 		<url>https://github.com/reubenpeeris/lombok-eclipse-compiler</url>
-		<connection>scm:git:https://github.com/reubenpeeris/lombok-eclipse-compiler.git</connection>
-		<developerConnection>scm:git:https://github.com/reubenpeeris/lombok-eclipse-compiler.git</developerConnection>
+		<connection>scm:git:git@github.com:reubenpeeris/lombok-eclipse-compiler.git</connection>
+		<developerConnection>scm:git:git@github.com:reubenpeeris/lombok-eclipse-compiler.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 	<issueManagement>
 		<system>GitHub</system>
 		<url>https://github.com/reubenpeeris/lombok-eclipse-compiler/issues</url>
 	</issueManagement>
-	<ciManagement>
-		<system>Jenkins</system>
-		<url>https://buildhive.cloudbees.com/job/reubenpeeris/job/lombok-eclipse-compiler/</url>
-	</ciManagement>
 
 	<developers>
 		<developer>
