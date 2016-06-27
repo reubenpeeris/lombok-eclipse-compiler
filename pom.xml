@@ -3,7 +3,7 @@
 
 	<groupId>com.reubenpeeris.maven</groupId>
 	<artifactId>lombok-eclipse-compiler</artifactId>
-	<version>1.4-SNAPSHOT</version>
+	<version>4.6</version>
 	<packaging>jar</packaging>
 	
 	<name>Lombok Eclipse Compiler Plugin For Maven</name>
