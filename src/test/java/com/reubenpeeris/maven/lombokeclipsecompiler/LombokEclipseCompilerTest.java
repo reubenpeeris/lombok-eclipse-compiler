@@ -1,5 +1,17 @@
 package com.reubenpeeris.maven.lombokeclipsecompiler;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.CoreMatchers.theInstance;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
+import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,6 +28,7 @@ import org.codehaus.plexus.compiler.CompilerMessage.Kind;
 import org.codehaus.plexus.compiler.CompilerOutputStyle;
 import org.codehaus.plexus.compiler.CompilerResult;
 import org.codehaus.plexus.logging.Logger;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,16 +36,6 @@ import org.junit.rules.ExpectedException;
 
 import com.reubenpeeris.maven.lombokeclipsecompiler.ListLogger.Message;
 import com.reubenpeeris.maven.lombokeclipsecompiler.Program.ProgramParsingProcessor;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.CoreMatchers.startsWith;
-import static org.hamcrest.CoreMatchers.theInstance;
-import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.*;
 
 public class LombokEclipseCompilerTest {
 	private static final int JAVA_INDEX = 0;
@@ -122,8 +125,7 @@ public class LombokEclipseCompilerTest {
 		String[] commandLine = compiler.createCommandLine(newCompilerConfiguration());
 		assertThat(commandLine[COMPILER_JAR_INDEX], startsWith("-Xbootclasspath/a:"));
 		assertThat(commandLine[COMPILER_JAR_INDEX] + " should be JDT jar path",
-				commandLine[COMPILER_JAR_INDEX].matches(
-				"-Xbootclasspath/a:.*org/eclipse/jdt/core/compiler/ecj/.*/ecj-.*.jar"), is(true));
+				commandLine[COMPILER_JAR_INDEX], matchesPattern("-Xbootclasspath/a:.*org[/.]eclipse[/.]jdt[/.]core[/.]compiler[/.]ecj[/.].*[/.]ecj-.*.jar"));
 	}
 
 	@Test
