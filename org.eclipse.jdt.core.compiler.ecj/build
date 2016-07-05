@@ -2,19 +2,22 @@
 
 # find the following parameters via the eclipse download page:
 # http://download.eclipse.org/eclipse/downloads/
-version="4.6-201606061100"
-basename="org.eclipse.jdt.core.compiler.ecj-${version}"
-baseurl="http://ftp-stud.fht-esslingen.de/pub/Mirrors/eclipse/eclipse/downloads/drops4/R-${version}/"
+version="4.6"
+release="201606061100"
+
+versionfull="${version}-${release}"
+basename="org.eclipse.jdt.core.compiler.ecj-${versionfull}"
+baseurl="http://ftp-stud.fht-esslingen.de/pub/Mirrors/eclipse/eclipse/downloads/drops4/R-${versionfull}/"
 
 sources() {
 	src=${basename}-sources.jar
-	curl "${baseurl}ecjsrc-4.6.jar" > ${src}
+	curl "${baseurl}ecjsrc-${version}.jar" > ${src}
 	unzip -t ${src} &> /dev/null
 }
 
 binary() {
 	bin=${basename}.jar
-	curl "${baseurl}ecj-4.6.jar" > ${bin}
+	curl "${baseurl}ecj-${version}.jar" > ${bin}
 	unzip -t ${bin} &> /dev/null
 }
 
@@ -24,24 +27,47 @@ javadoc() {
 	rm README
 }
 
+replace-jdt-version() {
+	replace-version "$1" 'org.eclipse.jdt.core.compiler.ecj' "${versionfull}"
+}
+
+replace-lec-version() {
+	replace-version "$1" 'lombok-eclipse-compiler' "${version}-SNAPSHOT"
+}
+
+replace-version() {
+	sed -i "/<artifactId>$2<\/artifactId>/{n; s/<version>[^<]*<\/version>/<version>$3<\/version>/}" "$1"
+}
+
 pom() {
-	sed -i "s#\(<version>\)\(</version>\)#\1${version}\2#" pom.xml
-	sed -i "s#\(<version>\)\(</version>\)#\1${version}\2#" ../pom.xml
+	
+	replace-jdt-version ../../pom.xml
+	cp ../../pom.xml ./${basename}.pom.xml
+	replace-jdt-version ../../../pom.xml
+	replace-lec-version ../../../pom.xml
 }
 
 sign() {
-	gpg --armor --detach-sign pom.xml
-	mv pom.xml.asc ${basename}.pom.asc
+	gpg --armor --detach-sign ${basename}.pom.xml
+	mv ${basename}.pom.{xml.,}asc
 	gpg --armor --detach-sign ${bin}
 	gpg --armor --detach-sign ${src}
-	gpg --armor --detach-sign ${basename}-javadoc.jar 
+	gpg --armor --detach-sign ${basename}-javadoc.jar
 }
 
 install() {
-	mvn install:install-file -Dfile=${bin} -DpomFile=pom.xml
+	mvn install:install-file -Dfile=${bin} -DpomFile=${basename}.pom.xml
+}
+
+cd-target() {
+	cd "$( dirname "${BASH_SOURCE[0]}" )"
+	rm -Rf target
+	mkdir -p target/"${versionfull}"
+	cd target/"${versionfull}"
 }
 
 set -e
+cd-target
 sources
 binary
 javadoc
