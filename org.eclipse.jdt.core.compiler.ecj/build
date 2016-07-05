@@ -2,8 +2,8 @@
 
 # find the following parameters via the eclipse download page:
 # http://download.eclipse.org/eclipse/downloads/
-version="4.6"
-release="201606061100"
+version="4.5.2"
+release="201602121500"
 
 versionfull="${version}-${release}"
 basename="org.eclipse.jdt.core.compiler.ecj-${versionfull}"
