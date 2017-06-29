@@ -3,7 +3,7 @@
 
 	<groupId>com.reubenpeeris.maven</groupId>
 	<artifactId>lombok-eclipse-compiler</artifactId>
-	<version>4.7-SNAPSHOT</version>
+	<version>4.7</version>
 	<packaging>jar</packaging>
 
 	<name>Lombok Eclipse Compiler Plugin For Maven</name>
@@ -23,7 +23,7 @@
 		<url>https://github.com/reubenpeeris/lombok-eclipse-compiler</url>
 		<connection>scm:git:git@github.com:reubenpeeris/lombok-eclipse-compiler.git</connection>
 		<developerConnection>scm:git:git@github.com:reubenpeeris/lombok-eclipse-compiler.git</developerConnection>
-		<tag>HEAD</tag>
+		<tag>lombok-eclipse-compiler-4.7</tag>
 	</scm>
 	<issueManagement>
 		<system>GitHub</system>
