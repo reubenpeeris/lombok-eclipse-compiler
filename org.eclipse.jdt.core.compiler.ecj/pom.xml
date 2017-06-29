@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.reubenpeeris</groupId>
 	<artifactId>org.eclipse.jdt.core.compiler.ecj</artifactId>
-	<version>4.5.2-201602121500</version>
+	<version>4.7-201706120950</version>
 	<packaging>jar</packaging>
 
 	<name>Eclipse JDT compiler</name>

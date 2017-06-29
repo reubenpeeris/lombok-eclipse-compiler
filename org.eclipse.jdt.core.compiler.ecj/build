@@ -2,12 +2,13 @@
 
 # find the following parameters via the eclipse download page:
 # http://download.eclipse.org/eclipse/downloads/
-version="4.5.2"
-release="201602121500"
+version="4.7"
+release="201706120950"
+releasetype="R" #R - release, S - Stable, I - Integration
 
 versionfull="${version}-${release}"
 basename="org.eclipse.jdt.core.compiler.ecj-${versionfull}"
-baseurl="http://ftp-stud.fht-esslingen.de/pub/Mirrors/eclipse/eclipse/downloads/drops4/R-${versionfull}/"
+baseurl="http://ftp-stud.fht-esslingen.de/pub/Mirrors/eclipse/eclipse/downloads/drops4/${releasetype}-${versionfull}/"
 
 sources() {
 	src=${basename}-sources.jar
@@ -48,6 +49,8 @@ pom() {
 }
 
 sign() {
+	echo
+	echo '### You are about to be asked for your PGP passphrase 4 times ###'
 	gpg --armor --detach-sign ${basename}.pom.xml
 	mv ${basename}.pom.{xml.,}asc
 	gpg --armor --detach-sign ${bin}
